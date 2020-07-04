@@ -5,15 +5,17 @@
 #include "core/pqueue.c"
 #include "core/reactor.c"
 
+typedef struct {
+    int value;
+    bool is_present;
+    int num_destinations;
+} template_port_struct;
+
 template <class T>
-class Port {
-public:
-	T value;
-	bool _is_present;
-	T get() { return value;}
-	void set(T _value) { this->value = _value; this->_is_present=true; }
-	bool is_present () { return _is_present;}
-	Port<T>* get_pointer() { return this; }
-};
+void SET (template_port_struct* out, T value)
+{
+	out->value = value;
+	out->is_present = true;
+}
 
 #endif // CPP_TARGET_H
