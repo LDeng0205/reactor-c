@@ -40,6 +40,15 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 
 /**
+ * Offset to _LF_CLOCK that would convert it
+ * to epoch time.
+ * For CLOCK_REALTIME, this offset is always zero.
+ * For CLOCK_MONOTONIC, it is the difference between those
+ * clocks at the start of the execution.
+ */
+interval_t _lf_arduino_offset = 0LL;
+
+/**
  * Time instant. Both physical and logical times are represented
  * using this typedef.
  * WARNING: If this code is used after about the year 2262,

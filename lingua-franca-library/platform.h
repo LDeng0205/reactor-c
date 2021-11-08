@@ -42,6 +42,8 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include "platform/lf_arduino_platforms.h"
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
    // Windows platforms
    #include "platform/lf_windows_support.h"
@@ -60,7 +62,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #elif defined(__riscv) || defined(__riscv__) 
     // RISC-V (see https://github.com/riscv/riscv-toolchain-conventions)
     #error "RISC-V not supported"
-#elif defined(__AVR_ATmega168__) || defined(__AVR_ATmega4809__)
+#elif defined(BOARD)
     #include "platform/lf_arduino_support.h"
 #else
 #error "Platform not supported"
