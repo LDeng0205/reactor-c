@@ -68,7 +68,4 @@ _interval_t _lf_arduino_offset = 0LL;
  */
 typedef uint32_t _microstep_t;
 
-// The underlying physical clock for MacOS
-#define _LF_CLOCK CLOCK_MONOTONIC
-
-#endif // LF_MACOS_SUPPORT_H
+#endif // LF_ARDUINO_SUPPORT_H
