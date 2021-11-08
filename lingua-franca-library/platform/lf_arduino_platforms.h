@@ -36,7 +36,7 @@
     #define BOARD "Robot Ctrl"
 #elif defined(ARDUINO_AVR_ROBOT_MOTOR)       
     #define BOARD "Robot Motor"
-#elif defined(ARDUINO_AVR_UNO)       
+#elif defined(ARDUINO_AVR_UNO) || defined(__AVR_ATmega4809__)       
     #define BOARD "Uno"
 #elif defined(ARDUINO_AVR_YUN)       
     #define BOARD "Yun"
