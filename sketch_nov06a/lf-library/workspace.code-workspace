@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "211107-221127-zero",
+			"path": "..\\.."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"arduino.h": "c",
+			"hardwareserial.h": "c",
+			"lf_arduino_support.c": "cpp",
+			"reactor.c": "cpp"
+		}
+	}
+}
