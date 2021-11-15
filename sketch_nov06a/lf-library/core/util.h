@@ -39,10 +39,10 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Holds generic statistical data
  */
 typedef struct lf_stat_ll {
-    long long average;
-    long long standard_deviation;
-    long long variance;
-    long long max;
+    long average;
+    long standard_deviation;
+    long variance;
+    long max;
 } lf_stat_ll;
 
 /**

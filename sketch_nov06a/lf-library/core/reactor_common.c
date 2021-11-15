@@ -184,7 +184,7 @@ void set_stp_offset(interval_t offset) {
 void readable_time(char* buffer, instant_t time) {
     // If the number is negative or below 1000, just print it and return.
     if (time < 1000LL) {
-        sprintf(buffer, "%lld", (long long)time);
+        sprintf(buffer, "%lld", (long)time);
         return;
     }
     int count = 0;
@@ -195,7 +195,7 @@ void readable_time(char* buffer, instant_t time) {
     }
     // Highest order clause should not be filled with zeros.
     instant_t to_print = clauses[--count] % 1000LL;
-    sprintf(buffer, "%lld", (long long)to_print);
+    sprintf(buffer, "%lld", (long)to_print);
     if (to_print >= 100LL) {
         buffer += 3;
     } else if (to_print >= 10LL) {
@@ -205,7 +205,7 @@ void readable_time(char* buffer, instant_t time) {
     }
     while (count-- > 1) {
         to_print = clauses[count] % 1000LL;
-        sprintf(buffer, ",%03lld,", (long long)to_print);
+        sprintf(buffer, ",%03lld,", (long)to_print);
         buffer += 4;
     }
     sprintf(buffer, ",%03lld", clauses[0] % 1000LL);
@@ -1041,7 +1041,7 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
         extra_delay = 0LL;
     }
 
-    DEBUG_PRINT("_lf_schedule: scheduling trigger %p with delay %lld and token %p.",
+    warning_print("_lf_schedule: scheduling trigger %p with delay %ld and token %p.",
             trigger, extra_delay, token);
     
 	// The trigger argument could be null, meaning that nothing is triggered.
@@ -1067,7 +1067,7 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
     	delay += trigger->offset;
     }
     interval_t intended_time = current_tag.time + delay;
-    DEBUG_PRINT("_lf_schedule: current_tag.time = %lld. Total logical delay = %lld",
+    warning_print("_lf_schedule: current_tag.time = %ld. Total logical delay = %ld",
             current_tag.time, delay);
     interval_t min_spacing = trigger->period;
 
@@ -1099,8 +1099,8 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
         // - we have eliminated the possibility to have a negative additional delay; and
         // - we detect the asynchronous use of logical actions
         if (intended_time < current_tag.time) {
-            warning_print("Attempting to schedule an event earlier than current time by %lld nsec! "
-                    "Revising to the current time %lld.",
+            warning_print("Attempting to schedule an event earlier than current time by %ld nsec! "
+                    "Revising to the current time %ld.",
                     current_tag.time - intended_time, current_tag.time);
             intended_time = current_tag.time;
         }
@@ -1128,7 +1128,7 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
                 intended_tag.microstep++;
             }
             if (_lf_is_tag_after_stop_tag(intended_tag)) {
-                DEBUG_PRINT("Attempt to schedule an event after stop_tag was rejected.");
+                warning_print("Attempt to schedule an event after stop_tag was rejected.");
                 // Scheduling an event will incur a microstep
                 // after the stop tag.
                 _lf_recycle_event(e);
@@ -1146,15 +1146,15 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
         // earliest time at which the new event can be scheduled.
         // Check to see whether the event is too early. 
         instant_t earliest_time = existing->time + min_spacing;
-        DEBUG_PRINT("There is a previously scheduled event; earliest possible time "
+        warning_print("There is a previously scheduled event; earliest possible time "
                 "with min spacing: %lld",
                 earliest_time);
         // If the event is early, see which policy applies.
         if (earliest_time >= intended_time) {
-            DEBUG_PRINT("Event is early.");
+            warning_print("Event is early.");
             switch(trigger->policy) {
                 case drop:
-                    DEBUG_PRINT("Policy is drop. Dropping the event.");
+                    warning_print("Policy is drop. Dropping the event.");
                     if (min_spacing > 0 || 
                             pqueue_find_equal_same_priority(event_q, existing) != NULL) {
                         // Recycle the new event and the token.
@@ -1165,7 +1165,7 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
                         return(0);
                     }
                 case replace:
-                    DEBUG_PRINT("Policy is replace. Replacing the previous event.");
+                    warning_print("Policy is replace. Replacing the previous event.");
                     // If the existing event has not been handled yet, update
                     // it. WARNING: If provide a mechanism for unscheduling, we
                     // can no longer rely on the tag of the existing event to

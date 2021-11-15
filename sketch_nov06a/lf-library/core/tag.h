@@ -36,6 +36,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "limits.h"
 
+#ifndef BOARD
 /* Conversion of time to nanoseconds. */
 #define NSEC(t) (t * 1LL)
 #define NSECS(t) (t * 1LL)
@@ -53,6 +54,24 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DAYS(t)  (t * 86400000000000LL)
 #define WEEK(t)  (t * 604800000000000LL)
 #define WEEKS(t) (t * 604800000000000LL)
+#else 
+#define NSEC(t) (t / 1000L)
+#define NSECS(t) (t / 1000L)
+#define USEC(t) (t)
+#define USECS(t) (t)
+#define MSEC(t) (t * 1000L)
+#define MSECS(t) (t * 1000L)
+#define SEC(t)  (t * 1000000L)
+#define SECS(t) (t * 1000000L)
+#define MINUTE(t)   (t * 60000000L)
+#define MINUTES(t)  (t * 60000000L)
+#define HOUR(t)  (t * 3600000000L)
+#define HOURS(t) (t * 3600000000L)
+#define DAY(t)   (t * 86400000000L)
+#define DAYS(t)  (t * 86400000000L)
+#define WEEK(t)  (t * 604800000000L)
+#define WEEKS(t) (t * 604800000000L)
+#endif
 
 // Commonly used time values.
 #ifdef BOARD

@@ -48,11 +48,11 @@ void calculate_epoch_offset() {
         struct timespec physical_clock_snapshot, real_time_start;
 
         clock_gettime(_LF_CLOCK, &physical_clock_snapshot);
-        long long physical_clock_snapshot_ns = convert_timespec_to_ns(physical_clock_snapshot);
+        long physical_clock_snapshot_ns = convert_timespec_to_ns(physical_clock_snapshot);
 
 
         clock_gettime(CLOCK_REALTIME, &real_time_start);
-        long long real_time_start_ns = convert_timespec_to_ns(real_time_start);
+        long real_time_start_ns = convert_timespec_to_ns(real_time_start);
 
         _lf_epoch_offset = real_time_start_ns - physical_clock_snapshot_ns;
     }

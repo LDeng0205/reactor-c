@@ -33,6 +33,8 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @see https://gist.github.com/Soroosh129/127d1893fa4c1da6d3e1db33381bb273
  */
 
+#ifndef BOARD
+
 #include <windows.h>
 #include <process.h>
 #include <errno.h>
@@ -57,10 +59,6 @@ double _lf_frequency_to_ns = 1.0;
 
 #ifdef NUMBER_OF_WORKERS
 #if __STDC_VERSION__ < 201112L || defined (__STDC_NO_THREADS__) // (Not C++11 or later) or no threads support
-
-/**
- * \defgroup bgroup Group B
- *
 
 /**
  * Create a new thread, starting with execution of lf_thread
@@ -327,3 +325,5 @@ int lf_nanosleep(instant_t requested_time) {
     /* Slept without problems */
     return TRUE;
 }
+
+#endif
