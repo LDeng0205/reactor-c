@@ -364,20 +364,18 @@ int lf_reactor_c_main(int argc, char* argv[]) {
     }
 }
 
-#ifndef BOARD
 int main(int argc, char* argv[]) {
     return lf_reactor_c_main(argc, argv);
 }
-#else
+
 #ifdef __cplusplus
-extern "C" {
-#endif
-void setup(){
-    lf_reactor_c_main(0, NULL); 
+    extern "C" {
+
+    void setup(){
+        lf_reactor_c_main(0, NULL); 
+    }
+    void loop() {
+    }
 }
-void loop() {
-}
-#ifdef __cplusplus
-}
 #endif
-#endif
+

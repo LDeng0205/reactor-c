@@ -112,27 +112,6 @@ int _lf_tokens_with_ref_count_size = 0;
  */
 interval_t _lf_global_time_STP_offset = 0LL;
 
-#ifdef FEDERATED
-/**
- * Reset absent fields on network input ports.
- * @note Defined in federate.c
- */
-void reset_status_fields_on_input_port_triggers();
-
-/**
- * Enqueue network control reactions.
- */
-void enqueue_network_control_reactions(pqueue_t* reaction_q);
-
-/**
- * Determine the status of the port at the current logical time.
- * If successful, return true. If the status cannot be determined
- * at this moment, return false.
- * 
- * @param portID the ID of the port to determine status for
- */
-port_status_t determine_port_status_if_possible(int portID);
-#endif
 
 /**
  * Set the stop tag.
