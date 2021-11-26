@@ -40,6 +40,10 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdarg.h>     // Defines va_list
 #include <time.h>       // Defines nanosleep()
 
+#ifdef BOARD
+#include <Arduino.h>
+#endif
+
 #ifndef NUMBER_OF_FEDERATES
 #define NUMBER_OF_FEDERATES 1
 #endif
@@ -47,6 +51,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /** Number of nanoseconds to sleep before retrying a socket read. */
 #define SOCKET_READ_RETRY_INTERVAL 1000000
 
+static char buf[128];
 /**
  * The ID of this federate. For a non-federated execution, this will
  * be -1.  For a federated execution, it will be assigned when the generated function
@@ -71,6 +76,25 @@ int get_fed_id() {
 	return _lf_my_fed_id;
 }
 
+
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
+
 /**
  * Internal implementation of the next few reporting functions.
  */
@@ -82,6 +106,7 @@ void _lf_message_print(
     // If we make multiple calls to printf(), then the results could be
     // interleaved between threads.
     // vprintf() is a version that takes an arg list rather than multiple args.
+    
     size_t length = strlen(prefix) + strlen(format) + 32;
     char* message = (char*) malloc(length + 1);
     if (_lf_my_fed_id < 0) {
@@ -95,6 +120,7 @@ void _lf_message_print(
         if (is_error) {
             vfprintf(stderr, message, args);
         } else {
+            //Serial.println("TEST");
             vfprintf(stdout, message, args);
         }
     } else if (log_level <= print_message_level) {
@@ -164,10 +190,19 @@ void error_print(char* format, ...) {
  * at the end.  The arguments are just like printf().
  */
 void warning_print(char* format, ...) {
+    #ifdef BOARD
+    va_list args;
+    va_start (args,format);
+    vsnprintf(buf, sizeof(buf),format,args);
+    va_end (args);
+    buf[sizeof(buf)/sizeof(buf[0])-1]='\0';
+    Serial.println(buf);
+    #else
     va_list args;
     va_start (args, format);
     _lf_message_print(1, "WARNING: ", format, args, LOG_LEVEL_WARNING);
     va_end (args);
+    #endif
 }
 
 /**

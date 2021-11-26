@@ -57,7 +57,7 @@ extern "C" {
  *  set appropriately (see `man 2 clock_nanosleep`).
  */
 int lf_nanosleep(instant_t requested_time) {
-    unsigned int microsec = (unsigned int) ns_to_microsec(requested_time);
+    unsigned int microsec = (unsigned int) requested_time;
     if(microsec < 3){
         delayMicroseconds(3); //Warning: Needs to be >= 3 for precision reasons
     }
@@ -84,21 +84,13 @@ void lf_initialize_clock() {}
  */
 int lf_clock_gettime(instant_t* t) {
     
-    // Adjust the clock by the epoch offset, so epoch time is always reported.
-    unsigned long microsec = micros();
-
-    // We need to apply the epoch offset if it is not zero
-    // if (_lf_arduino_offset != 0) {
-    //    microsec += _lf_arduino_offset;
-    // }
-    
     if (t == NULL) {
         // The t argument address references invalid memory
         errno = EFAULT;
         return -1;
     }
 
-    *t = microsec * 1000;
+    *t = micros();
     return 0;
 }
 

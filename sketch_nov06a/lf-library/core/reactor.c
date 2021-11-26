@@ -104,11 +104,11 @@ trigger_handle_t _lf_schedule_copy(void* action, interval_t offset, void* value,
 int wait_until(instant_t logical_time_ns) {
     int return_value = 0;
     if (!fast) {
-        LOG_PRINT("Waiting for elapsed logical time %lld.", logical_time_ns - start_time);
+        LOG_PRINT("Waiting for elapsed logical time %ld.", logical_time_ns - start_time);
         interval_t ns_to_wait = logical_time_ns - get_physical_time();
     
         if (ns_to_wait < MIN_WAIT_TIME) {
-            DEBUG_PRINT("Wait time %lld is less than MIN_WAIT_TIME %lld. Skipping wait.",
+            DEBUG_PRINT("Wait time %lld is less than MIN_WAIT_TIME %ld. Skipping wait.",
                 ns_to_wait, MIN_WAIT_TIME);
             return return_value;
         }
@@ -312,6 +312,8 @@ bool _lf_is_blocked_by_executing_reaction() {
     return false;
 }
 
+int atexit(void (*func)()) { return 0; }
+
 /**
  * The main loop of the LF program.
  * 
@@ -328,11 +330,11 @@ int lf_reactor_c_main(int argc, char* argv[]) {
     // Invoke the function that optionally provides default command-line options.
     _lf_set_default_command_line_options();
 
-    //DEBUG_PRINT("Processing command line arguments.");
+    DEBUG_PRINT("Processing command line arguments.");
     if (process_args(default_argc, default_argv)
             && process_args(argc, argv)) {
-        //DEBUG_PRINT("Processed command line arguments.");
-        //DEBUG_PRINT("Registering the termination function.");
+        DEBUG_PRINT("Processed command line arguments.");
+        DEBUG_PRINT("Registering the termination function.");
         if (atexit(termination) != 0) {
             warning_print("Failed to register termination function!");
         }

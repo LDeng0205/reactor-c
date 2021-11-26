@@ -1,4 +1,4 @@
-#define LOG_LEVEL 2
+#define LOG_LEVEL 4
 #include "ctarget.h"
 #define NUMBER_OF_FEDERATES 1
 #define TARGET_FILES_DIRECTORY "D:\Documents\GitHub\Lingua Franca Website\lingua-franca\example\C\src-gen\Test\Blink"
@@ -19,23 +19,6 @@ typedef struct {
     reaction_t* _lf__startup_reactions[1];
 } blink_self_t;
 
-#ifdef __arm__
-// should use uinstd.h to define sbrk but Due causes a conflict
-extern "C" char* sbrk(int incr);
-#else  // __ARM__
-extern char *__brkval;
-#endif  // __arm__
-
-int freeMemory() {
-  char top;
-#ifdef __arm__
-  return &top - reinterpret_cast<char*>(sbrk(0));
-#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
-  return &top - __brkval;
-#else  // __arm__
-  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
-#endif  // __arm__
-}
 
 void blinkreaction_function_0(void* instance_args) {
     #pragma GCC diagnostic push
@@ -43,7 +26,7 @@ void blinkreaction_function_0(void* instance_args) {
     blink_self_t* self = (blink_self_t*)instance_args;
     
     #pragma GCC diagnostic pop
-    Serial.begin(9600);
+    Serial.begin(115200);
     pinMode(LED_BUILTIN, OUTPUT);
         
 }
@@ -53,8 +36,7 @@ void blinkreaction_function_1(void* instance_args) {
     blink_self_t* self = (blink_self_t*)instance_args;
     
     #pragma GCC diagnostic pop
-    Serial.print("switch high\n");
-    Serial.println(freeMemory());
+    Serial.println("switch high");
     digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
         
 }
@@ -64,8 +46,7 @@ void blinkreaction_function_2(void* instance_args) {
     blink_self_t* self = (blink_self_t*)instance_args;
     
     #pragma GCC diagnostic pop
-    Serial.print("switch low\n");
-    Serial.println(freeMemory());
+    Serial.println("switch low");
     digitalWrite(LED_BUILTIN, LOW);   // turn the LED off (LOW is the voltage level)
         
 }
@@ -226,15 +207,15 @@ void _lf_initialize_trigger_objects() {
     blink_self->_lf__reaction_0.chain_id = 1;
     // index is the OR of level 0 and 
     // deadline 140737488355327 shifted left 16 bits.
-    blink_self->_lf__reaction_0.index = 0x7fffffffffff0000LL;
+    blink_self->_lf__reaction_0.index = 0x7fff0000LL;
     blink_self->_lf__reaction_1.chain_id = 1;
     // index is the OR of level 1 and 
     // deadline 140737488355327 shifted left 16 bits.
-    blink_self->_lf__reaction_1.index = 0x7fffffffffff0001LL;
+    blink_self->_lf__reaction_1.index = 0x7fff0001LL;
     blink_self->_lf__reaction_2.chain_id = 1;
     // index is the OR of level 2 and 
     // deadline 140737488355327 shifted left 16 bits.
-    blink_self->_lf__reaction_2.index = 0x7fffffffffff0002LL;
+    blink_self->_lf__reaction_2.index = 0x7fff0002LL;
 }
 void _lf_trigger_startup_reactions() {
     
