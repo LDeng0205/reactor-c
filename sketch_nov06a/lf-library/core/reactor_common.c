@@ -651,12 +651,6 @@ void _lf_pop_events() {
         event = (event_t*)pqueue_peek(event_q);
     };
 
-#ifdef FEDERATED
-    // Insert network dependent reactions for network input and output ports into
-    // the reaction queue
-    enqueue_network_control_reactions(reaction_q);
-#endif // FEDERATED
-
     DEBUG_PRINT("There are %d events deferred to the next microstep.", pqueue_size(next_q));
 
     // After populating the reaction queue, see if there are things on the
@@ -839,12 +833,6 @@ int _lf_schedule_at_tag(trigger_t* trigger, tag_t tag, lf_token_t* token) {
 
     // Set the payload.
     e->token = token;
-
-#ifdef FEDERATED_DECENTRALIZED
-    // Set the intended tag
-    e->intended_tag = trigger->intended_tag;
-#endif
-
     event_t* found = (event_t *)pqueue_find_equal_same_priority(event_q, e);
     if (found != NULL) {
         if (tag.microstep == 0u) {
@@ -1084,12 +1072,6 @@ trigger_handle_t _lf_schedule(trigger_t* trigger, interval_t extra_delay, lf_tok
             intended_time = current_tag.time;
         }
     }
-
-#ifdef FEDERATED_DECENTRALIZED
-    // Event inherits the original intended_tag of the trigger
-    // set by the network stack (or the default, which is (NEVER,0))
-    e->intended_tag = trigger->intended_tag;
-#endif
     
     event_t* existing = (event_t*)(trigger->last);
     // Check for conflicts (a queued event with the same trigger and time).
@@ -1274,19 +1256,6 @@ trigger_handle_t _lf_insert_reactions_for_trigger(trigger_t* trigger, lf_token_t
 
     // Check if the trigger has violated the STP offset
     bool is_STP_violated = false;
-#ifdef FEDERATED
-    if (compare_tags(trigger->intended_tag, get_current_tag()) < 0) {
-        is_STP_violated = true;
-    }
-#ifdef FEDERATED_CENTRALIZED
-    // Check for STP violation in the centralized coordination, which is a 
-    // critical error.
-    if (is_STP_violated) {
-        error_print_and_exit("Attempted to insert reactions for a trigger that had violated the STP offset"
-                             " in centralized coordination.");
-    }
-#endif
-#endif
 
     // Copy the token pointer into the trigger struct so that the
     // reactions can access it. This overwrites the previous template token,
@@ -1443,11 +1412,7 @@ void schedule_output_reactions(reaction_t* reaction, int worker) {
     // without going through the reaction queue.
     reaction_t* downstream_to_execute_now = NULL;
     int num_downstream_reactions = 0;
-#ifdef FEDERATED_DECENTRALIZED // Only pass down STP violation for federated programs that use decentralized coordination.
-    // Extract the inherited STP violation
-    bool inherited_STP_violation = reaction->is_STP_violated;
-    LOG_PRINT("Reaction %s has STP violation status: %d.", reaction->name, reaction->is_STP_violated);
-#endif
+
     DEBUG_PRINT("There are %d outputs from reaction %s.", reaction->num_outputs, reaction->name);
     for (int i=0; i < reaction->num_outputs; i++) {
         if (*(reaction->output_produced[i])) {
@@ -1460,14 +1425,7 @@ void schedule_output_reactions(reaction_t* reaction, int worker) {
                     DEBUG_PRINT("Trigger %p lists %d reactions.", trigger, trigger->number_of_reactions);
                     for (int k=0; k < trigger->number_of_reactions; k++) {
                         reaction_t* downstream_reaction = trigger->reactions[k];
-#ifdef FEDERATED_DECENTRALIZED // Only pass down tardiness for federated LF programs
-                        // Set the is_STP_violated for the downstream reaction
-                        if (downstream_reaction != NULL) {
-                            downstream_reaction->is_STP_violated = inherited_STP_violation;
-                            DEBUG_PRINT("Passing is_STP_violated of %d to the downstream reaction: %s",
-                            		downstream_reaction->is_STP_violated, downstream_reaction->name);
-                        }
-#endif
+
                         if (downstream_reaction != NULL && downstream_reaction != downstream_to_execute_now) {
                             num_downstream_reactions++;
                             // If there is exactly one downstream reaction that is enabled by this
@@ -1504,48 +1462,7 @@ void schedule_output_reactions(reaction_t* reaction, int worker) {
     if (downstream_to_execute_now != NULL) {
         LOG_PRINT("Worker %d: Optimizing and executing downstream reaction now: %s", worker, downstream_to_execute_now->name);
         bool violation = false;
-#ifdef FEDERATED_DECENTRALIZED // Only use the STP handler for federated programs that use decentralized coordination
-        // If the is_STP_violated for the reaction is true,
-        // an input trigger to this reaction has been triggered at a later
-        // logical time than originally anticipated. In this case, a special
-        // STP handler will be invoked.             
-        // FIXME: Note that the STP handler will be invoked
-        // at most once per logical time value. If the STP handler triggers the
-        // same reaction at the current time value, even if at a future superdense time,
-        // then the reaction will be invoked and the STP handler will not be invoked again.
-        // However, input ports to a federate reactor are network port types so this possibly should
-        // be disallowed.
-        // @note The STP handler and the deadline handler are not mutually exclusive.
-        //  In other words, both can be invoked for a reaction if it is triggered late
-        //  in logical time (STP offset is violated) and also misses the constraint on 
-        //  physical time (deadline).
-        // @note In absence of a STP handler, the is_STP_violated will be passed down the reaction
-        //  chain until it is dealt with in a downstream STP handler.
-        if (downstream_to_execute_now->is_STP_violated == true) {
-            // Tardiness has occurred
-            LOG_PRINT("Event has STP violation.");
-            reaction_function_t handler = downstream_to_execute_now->STP_handler;
-            // Invoke the STP handler if there is one.
-            if (handler != NULL) {
-                // There is a violation and it is being handled here
-                // If there is no STP handler, pass the is_STP_violated
-                // to downstream reactions.
-                violation = true;
-                LOG_PRINT("Invoke tardiness handler.");
-                (*handler)(downstream_to_execute_now->self);
 
-                // If the reaction produced outputs, put the resulting
-                // triggered reactions into the queue or execute them directly if possible.
-                schedule_output_reactions(downstream_to_execute_now, worker);
-                
-                // Reset the tardiness because it has been dealt with in the
-                // STP handler
-                downstream_to_execute_now->is_STP_violated = false;
-                DEBUG_PRINT("Reset reaction's is_STP_violated field to false: %s",
-                		downstream_to_execute_now->name);
-            }
-        }
-#endif
         if (downstream_to_execute_now->deadline > 0LL) {
             // Get the current physical time.
             instant_t physical_time = get_physical_time();

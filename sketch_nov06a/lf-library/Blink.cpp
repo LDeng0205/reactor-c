@@ -1,4 +1,4 @@
-#define LOG_LEVEL 4
+#define LOG_LEVEL 2
 #include "ctarget.h"
 #define NUMBER_OF_FEDERATES 1
 #define TARGET_FILES_DIRECTORY "D:\Documents\GitHub\Lingua Franca Website\lingua-franca\example\C\src-gen\Test\Blink"

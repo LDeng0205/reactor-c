@@ -43,13 +43,12 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PLATFORM_H
 
 #include "platform/lf_arduino_platforms.h"
-#include "platform/lf_arduino_support.h" 
+
 #if defined(BOARD)
-    #include "platform/lf_arduino_support.h" 
+    #include "platform/lf_arduino_support.h"
 #else
     #error "Platform not supported"
 #endif
-
 
 /**
  * Time instant. Both physical and logical times are represented
@@ -69,33 +68,29 @@ typedef _microstep_t microstep_t;
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+    /**
+     * Initialize the LF clock. Must be called before using other clock-related APIs.
+     */
+    extern void lf_initialize_clock();
 
-/**
- * Initialize the LF clock. Must be called before using other clock-related APIs.
- */
-extern void lf_initialize_clock();
+    /**
+     * Fetch the value of an internal (and platform-specific) physical clock and 
+     * store it in `t`.
+     * 
+     * Ideally, the underlying platform clock should be monotonic. However, the
+     * core lib tries to enforce monotonicity at higher level APIs (see tag.h).
+     * 
+     * @return 0 for success, or -1 for failure
+     */
+    extern int lf_clock_gettime(instant_t* t);
 
-/**
- * Fetch the value of an internal (and platform-specific) physical clock and 
- * store it in `t`.
- * 
- * Ideally, the underlying platform clock should be monotonic. However, the
- * core lib tries to enforce monotonicity at higher level APIs (see tag.h).
- * 
- * @return 0 for success, or -1 for failure
- */
-extern int lf_clock_gettime(instant_t* t);
-
-/**
- * Pause execution for a number of nanoseconds.
- * 
- * @return 0 for success, or -1 for failure.
- */
-extern int lf_nanosleep(instant_t requested_time);
-
-#ifdef __cplusplus
-}
+    /**
+     * Pause execution for a number of nanoseconds.
+     * 
+     * @return 0 for success, or -1 for failure.
+     */
+    extern int lf_nanosleep(instant_t requested_time);
+    }
 #endif
 
 #endif // PLATFORM_H

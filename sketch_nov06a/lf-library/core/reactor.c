@@ -366,13 +366,9 @@ int lf_reactor_c_main(int argc, char* argv[]) {
     }
 }
 
-int main(int argc, char* argv[]) {
-    return lf_reactor_c_main(argc, argv);
-}
-
+// Arduino setup() and loop() functions
 #ifdef __cplusplus
-    extern "C" {
-
+extern "C" {
     void setup(){
         lf_reactor_c_main(0, NULL); 
     }
