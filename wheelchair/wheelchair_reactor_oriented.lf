@@ -1,0 +1,131 @@
+target CCpp;
+
+
+
+preamble {=
+    #include <Mouse.h>
+    #include <Keyboard.h>
+    #include <Arduino.h>
+    // Pins
+    int x = A4;
+    int y = A3;
+    int air_sensor = A0;
+    int joystick_sel_pin = 7;
+
+    // Mouse Movement Controls
+    const int sensitivity = 23; // larger sensitivity --> slower mouse
+    const unsigned long loop_period = 15; // larger loop_period --> more delay
+    int y_zero, x_zero;
+    boolean invert = true;
+
+    // Click Flags
+    int right_click_flag = 0;
+    int left_click_flag = 0;
+    int scroll_flag = 0;
+    int zoom_flag = 0;
+
+    // Debug Constants
+    boolean debug_cursor = false;
+    boolean debug_air_sensor = false;
+
+    // Multi Click Constants
+    int debounce_time = 20;   // Debounce timer in ms
+    int multi_click_time = 250;  // Time limit for multi clicks
+    int long_click_time = 250;  // time until "held-down clicks" register
+
+    // Air Sensor Constants
+    int rest = 361;
+    int max_sip = 13;
+    int max_puff = 648;
+
+    typedef struct {
+        size_t left_val;
+        size_t right_val;
+    } encoder_value;
+=}
+
+/**
+The idle reactor reads sensor values and calculates the wheel encoder value to be 
+sent to the buckler via BLE.
+*/
+reactor Sensor() {
+    input start: bool;
+    output speed: encoder_value;
+
+}
+
+/**
+The send reactor receives wheel speeds and sends them to the buckler via BLE.
+*/
+reactor Send() {
+    input speed: encoder_value;
+    reaction (speed) {=
+        // TODO: Arduino BLE code
+    =}
+}
+
+/**
+The alert reactor received pure signals of bump/cliff detection
+
+alert_val: // TODO: document values with corresponding bump cliff/sensor readings.
+*/
+reactor Alert() {
+    input alert_val: int;
+    reaction (alert_val) {=
+        // TODO: vibration, display alert message via LCD, etc.
+    =}
+}
+
+main reactor {
+    logical action loop;
+    reaction (startup) -> loop {=
+        pinMode(x, INPUT);
+        pinMode(y, INPUT);
+        pinMode(air_sensor, INPUT);
+        pinMode(joystick_sel_pin, INPUT_PULLUP);
+
+        Mouse.begin();
+
+        y_zero = analogRead(y);
+        x_zero = analogRead(x);
+        rest = analogRead(air_sensor);
+        Serial.begin(9600);
+        schedule(loop, 0);
+    =}
+    reaction (loop) -> loop {=
+        static unsigned long lastLoop;
+        int x_reading = analogRead(x);
+        int y_reading = analogRead(y);
+        int air_reading = analogRead(air_sensor);
+        int y_val = (y_reading - y_zero) / sensitivity;
+        int x_val = (x_reading - x_zero) / sensitivity;
+
+        if (invert) {
+            x_val *= -1;
+            y_val *= -1;
+        }
+
+        if (debug_air_sensor) {
+            Serial.println(air_reading);
+        }
+
+        // Move Mouse
+        if (!scroll_flag && !zoom_flag) {
+            if (y_val > 1 || y_val < -1) {
+            Serial.print("y value:");
+            Serial.println(y_val);
+            Mouse.move(0, y_val * 100, 0);  // move mouse on y axis
+            }
+            if (x_val > 1 || x_val < -1) {
+            Serial.print("x value:");
+            Serial.println(x_val);
+            Mouse.move(x_val * 100, 0, 0);  // move mouse on x axis
+            }
+            //while (millis() - lastLoop < loop_period) {
+            // delay
+            //}
+            //lastLoop = millis();
+        }
+        schedule(loop, 0);
+    =}
+}

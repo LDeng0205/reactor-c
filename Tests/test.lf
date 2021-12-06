@@ -1,0 +1,13 @@
+target CCpp;
+
+main reactor {
+    logical action loop;
+    reaction (startup){=
+        printf("Hello world!\n");
+        schedule(loop, 0);
+    =}
+    reaction (loop) {=
+        printf("Hello world!\n");
+        schedule(loop, 0);
+    =}
+}
