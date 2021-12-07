@@ -53,22 +53,40 @@ static simple_ble_config_t ble_config = {
 //4607eda0-f65e-4d59-a9ff-84420d87a4ca
 static simple_ble_service_t robot_service = {{
     .uuid128 = {0xca,0xa4,0x87,0x0d,0x42,0x84,0xff,0xA9,
-                0x59,0x4D,0x5e,0xf6,0xa0,0xed,0x07,0x46}
+                0x59,0x4D,0x5e,0xf6,0xa0,0xed,0x69,0x49}
 }};
 
 // TODO: Declare characteristics and variables for your service
-static simple_ble_char_t driving_left_char = {.uuid16 = 0x100b};
-static simple_ble_char_t driving_right_char = {.uuid16 = 0x100c};
+static simple_ble_char_t driving_left_char = {.uuid16 = 0x100a};
+static simple_ble_char_t driving_right_char = {.uuid16 = 0x100b};
 static int driving_left = 0;
 static int driving_right = 0;
+
+static int target_left = 0;
+static int target_right = 0;
+
+bool gradual_swap = false;
+
+static simple_ble_char_t bump_char = {.uuid16 = 0x101a};
+static simple_ble_char_t cliff_char = {.uuid16 = 0x101b};
+// static int driving_left = 0;
+// static int driving_right = 0;
 
 
 simple_ble_app_t* simple_ble_app;
 
+int diff_left(){
+  return target_left - driving_left;
+}
+
+int diff_right(){
+  return target_right - driving_right;
+}
+
 void ble_evt_write(ble_evt_t const* p_ble_evt) {
-    // TODO: logic for each characteristic and related state changes
-  //   if (simple_ble_is_char_event(p_ble_evt, &driving_state_char)) {
-  // }
+  if (abs(diff_left()) >= 10 || abs(diff_right()) >= 10) {
+    gradual_swap = true;
+  }
 }
 
 // Return true if a cliff has been seen
@@ -137,6 +155,8 @@ void print_state(states current_state){
     display_write("OFF", DISPLAY_LINE_0);
     break;
   case ON:
+    display_write("checking value", DISPLAY_LINE_0);
+    nrf_delay_ms(200);
     if (check_bump(&sensors, &bump_is_right) && check_cliff(&sensors, &cliff_is_right)) {
       display_write("ON: both", DISPLAY_LINE_0);
     } else if (check_bump(&sensors, &bump_is_right)) {
@@ -146,6 +166,7 @@ void print_state(states current_state){
     } else {
       display_write("ON: none", DISPLAY_LINE_0);
     }
+    nrf_delay_ms(200);
     // display_write("ON", DISPLAY_LINE_0);
     break;
   } 
@@ -168,15 +189,23 @@ int main(void) {
 
   // TODO: Register your characteristics
   simple_ble_add_characteristic(1, 1, 0, 0,
-    sizeof(driving_left), (uint8_t*)&driving_left,
+    sizeof(target_left), (uint8_t*)&target_left,
     &robot_service, &driving_left_char);
   
   simple_ble_add_characteristic(1, 1, 0, 0,
-    sizeof(driving_right), (uint8_t*)&driving_right,
+    sizeof(target_right), (uint8_t*)&target_right,
     &robot_service, &driving_right_char);
 
+  // simple_ble_add_characteristic(1, 1, 0, 0,
+  //   sizeof(prev_cliff_state), (uint8_t*)&cliff,
+  //   &robot_service, &driving_left_char);
+  
+  // simple_ble_add_characteristic(1, 1, 0, 0,
+  //   sizeof(driving_right), (uint8_t*)&driving_right,
+  //   &robot_service, &driving_right_char);
+
   // Start Advertising
-  // simple_ble_adv_only_name();
+  simple_ble_adv_only_name();
 
   // initialize LEDs
   nrf_gpio_pin_dir_set(23, NRF_GPIO_PIN_DIR_OUTPUT);
@@ -223,22 +252,36 @@ int main(void) {
     int status = kobukiSensorPoll(&sensors);
 
     print_state(state);
-
+    char* buf[16];
     switch(state) {
       case OFF: {
         kobukiDriveDirect(0, 0);
         break;
       }
       case ON: {
+        if(gradual_swap) {
+          while (abs(diff_left()) >= 10 || abs(diff_right()) >= 10) {
+            snprintf(buf, 16, "%d|%d", diff_left(), diff_right());
+            display_write(buf, DISPLAY_LINE_0);
+            if(diff_left() <= -10) driving_left -= 10;
+            else if(diff_left() >= 10) driving_left += 10;
+            if(diff_right() <= -10) driving_right -= 10;
+            else if(diff_right() >= 10) driving_right += 10;
+            nrf_delay_ms(200);
+            kobukiDriveDirect(driving_left, driving_right); 
+          }
+        }
+          driving_right = target_right;
+          driving_left = target_left;
+          gradual_swap = false;
         kobukiDriveDirect(driving_left, driving_right);
         // set_payload(&sensors);
         bool cliff = check_cliff(&sensors, &cliff_is_right);
         bool bump = check_bump(&sensors, &bump_is_right);
         if (prev_cliff_state != cliff || prev_bump_state != bump) {
-          // advertise change in state if readings are new
-          set_payload(cliff, bump);
-          prev_cliff_state = cliff;
-          prev_bump_state = bump;
+           // advertise change in state if readings are new
+           prev_cliff_state = cliff;
+           prev_bump_state = bump;
         } 
         break;
       }
