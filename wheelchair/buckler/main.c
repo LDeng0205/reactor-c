@@ -36,14 +36,12 @@ NRF_TWI_MNGR_DEF(twi_mngr_instance, 5, 0);
 KobukiSensors_t sensors = {0};
 bool cliff_is_right = false;
 bool bump_is_right = false;
-bool prev_cliff_state = false;
-bool prev_bump_state = false;
 
 // Intervals for advertising and connections
 static simple_ble_config_t ble_config = {
         // c0:98:e5:49:xx:xx
         .platform_id       = 0x49,    // used as 4th octect in device BLE address
-        .device_id         = 0x0013, // TODO: replace with your lab bench number
+        .device_id         = 0x1313, // TODO: replace with your lab bench number
         .adv_name          = "wheelchair", // used in advertisements if there is room
         .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
         .min_conn_interval = MSEC_TO_UNITS(100, UNIT_1_25_MS),
@@ -69,8 +67,6 @@ bool gradual_swap = false;
 
 static simple_ble_char_t bump_char = {.uuid16 = 0x101a};
 static simple_ble_char_t cliff_char = {.uuid16 = 0x101b};
-// static int driving_left = 0;
-// static int driving_right = 0;
 
 
 simple_ble_app_t* simple_ble_app;
@@ -155,19 +151,16 @@ void print_state(states current_state){
     display_write("OFF", DISPLAY_LINE_0);
     break;
   case ON:
-    display_write("checking value", DISPLAY_LINE_0);
-    nrf_delay_ms(200);
+    nrf_delay_ms(1);
     if (check_bump(&sensors, &bump_is_right) && check_cliff(&sensors, &cliff_is_right)) {
-      display_write("ON: both", DISPLAY_LINE_0);
+      display_write("ON: both", DISPLAY_LINE_1);
     } else if (check_bump(&sensors, &bump_is_right)) {
-      display_write("ON: bump", DISPLAY_LINE_0);
+      display_write("ON: bump", DISPLAY_LINE_1);
     } else if (check_cliff(&sensors, &cliff_is_right)) {
-      display_write("ON: cliff", DISPLAY_LINE_0);
+      display_write("ON: cliff", DISPLAY_LINE_1);
     } else {
-      display_write("ON: none", DISPLAY_LINE_0);
+      display_write("ON: none", DISPLAY_LINE_1);
     }
-    nrf_delay_ms(200);
-    // display_write("ON", DISPLAY_LINE_0);
     break;
   } 
 }
@@ -195,14 +188,6 @@ int main(void) {
   simple_ble_add_characteristic(1, 1, 0, 0,
     sizeof(target_right), (uint8_t*)&target_right,
     &robot_service, &driving_right_char);
-
-  // simple_ble_add_characteristic(1, 1, 0, 0,
-  //   sizeof(prev_cliff_state), (uint8_t*)&cliff,
-  //   &robot_service, &driving_left_char);
-  
-  // simple_ble_add_characteristic(1, 1, 0, 0,
-  //   sizeof(driving_right), (uint8_t*)&driving_right,
-  //   &robot_service, &driving_right_char);
 
   // Start Advertising
   simple_ble_adv_only_name();
@@ -261,28 +246,31 @@ int main(void) {
       case ON: {
         if(gradual_swap) {
           while (abs(diff_left()) >= 10 || abs(diff_right()) >= 10) {
+
             snprintf(buf, 16, "%d|%d", diff_left(), diff_right());
             display_write(buf, DISPLAY_LINE_0);
-            if(diff_left() <= -10) driving_left -= 10;
-            else if(diff_left() >= 10) driving_left += 10;
-            if(diff_right() <= -10) driving_right -= 10;
-            else if(diff_right() >= 10) driving_right += 10;
-            nrf_delay_ms(200);
+            
+            if (diff_left() <= -10) {
+              driving_left -= 10;
+            } else if (diff_left() >= 10) { 
+              driving_left += 10;
+            }
+            if (diff_right() <= -10) {
+              driving_right -= 10;
+            } else if (diff_right() >= 10) {
+              driving_right += 10;
+            }
+
             kobukiDriveDirect(driving_left, driving_right); 
           }
-        }
-          driving_right = target_right;
-          driving_left = target_left;
-          gradual_swap = false;
+        }     
+        driving_right = target_right;
+        driving_left = target_left;
+        gradual_swap = false;
         kobukiDriveDirect(driving_left, driving_right);
         // set_payload(&sensors);
         bool cliff = check_cliff(&sensors, &cliff_is_right);
         bool bump = check_bump(&sensors, &bump_is_right);
-        if (prev_cliff_state != cliff || prev_bump_state != bump) {
-           // advertise change in state if readings are new
-           prev_cliff_state = cliff;
-           prev_bump_state = bump;
-        } 
         break;
       }
     }
